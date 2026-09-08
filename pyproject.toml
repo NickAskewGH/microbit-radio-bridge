@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "microbit-radio-bridge"
+version = "0.1.0"
+description = "Receive and decode BBC micro:bit MakeCode radio packets over USB"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+serial = ["pyserial>=3.5"]
+
+[project.scripts]
+microbit-radio = "microbit_radio.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["host"]

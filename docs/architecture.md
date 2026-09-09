@@ -1,17 +1,30 @@
 # Architecture
 
 ```text
-micro:bit remote
-      │  Nordic proprietary 2.4 GHz, 1 Mbit/s
-      ▼
-nRF52840 dongle firmware
-      │  USB CDC ACM; one captured packet per hex line
-      ▼
-Ubuntu host CLI
+remote or host command
       │
-      └── MakeCode packet decoder → JSON lines
+      ▼
+protocol adapter (MakeCode, Polar Mouse, ...)
+      │  decoded events / encoded packets
+      ▼
+shared serial transport
+      │  firmware commands / packet hex records
+      ▼
+nRF52840 PHY profile
+      │  protocol-specific 2.4 GHz radio configuration
+      ▼
+vehicle receiver
 ```
 
-The firmware owns radio timing, channel/address configuration, packet capture, and USB framing. The host owns protocol interpretation, filtering, logging, and later integration with the car controller. Keeping those responsibilities separate makes raw captures available when the project-specific radio settings need correction.
+The nRF52840 firmware owns time-critical radio operation: modulation, channels,
+addresses, whitening, CRC, packet capture, and transmission timing. Each PHY
+profile is selected through an explicit serial command such as `makecode_rx`.
 
-The first hardware milestone is to receive traffic from `mini-car-remote` without changing `mini-car`. The capture tool should record raw hex lines before decoding so fixtures can be replayed in tests.
+The host transport owns only CDC shell framing and extraction of packet records.
+Protocol adapters own setup commands, packet semantics, decoding, encoding,
+pairing state, and protocol-level safety rules. Raw captures and fixtures remain
+outside the Python package so they can be inspected and replayed independently.
+
+MakeCode is the first implemented adapter. Polar Mouse Droid remains a protocol
+workspace until captures establish its PHY and packet format; no values are
+assumed merely because it also operates in the 2.4 GHz ISM band.

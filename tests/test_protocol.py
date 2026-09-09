@@ -1,18 +1,31 @@
 from microbit_radio.protocol import PacketDecodeError, decode_packet
+from microbit_radio.protocols.makecode import MakeCodeProtocol
 from pathlib import Path
 
 
-FIXTURES = Path(__file__).parents[1] / "protocol" / "fixtures"
+FIXTURES = Path(__file__).parents[1] / "protocols" / "makecode" / "fixtures"
 
 
 def packet(packet_type: int, timestamp: int, serial: int, body: bytes, group: int = 20) -> bytes:
-    return bytes((1, group, 1, packet_type)) + timestamp.to_bytes(4, "little") + serial.to_bytes(4, "little") + body
+    return (
+        bytes((1, group, 1, packet_type))
+        + timestamp.to_bytes(4, "little")
+        + serial.to_bytes(4, "little")
+        + body
+    )
 
 
 def test_decodes_send_value_x_with_padding() -> None:
     raw = packet(1, 1234, 0, (-712).to_bytes(4, "little", signed=True) + bytes((1,)) + b"x")
     result = decode_packet(raw + bytes(32 - len(raw)), expected_group=20)
-    assert result.to_dict() == {"group": 20, "packet_type": 1, "timestamp_ms": 1234, "serial": 0, "value": -712, "name": "x"}
+    assert result.to_dict() == {
+        "group": 20,
+        "packet_type": 1,
+        "timestamp_ms": 1234,
+        "serial": 0,
+        "value": -712,
+        "name": "x",
+    }
 
 
 def test_decodes_checked_in_x_fixture() -> None:
@@ -55,3 +68,12 @@ def test_rejects_truncated_value_name() -> None:
         assert "truncated" in str(exc)
     else:
         raise AssertionError("expected truncation")
+
+
+def test_makecode_adapter_owns_setup_and_group_normalization() -> None:
+    protocol = MakeCodeProtocol(group=20, frequency=7)
+    raw = packet(1, 1234, 0, (-712).to_bytes(4, "little", signed=True) + bytes((1,)) + b"x")
+    raw = bytes((raw[0], 0)) + raw[2:]
+
+    assert protocol.receiver_command == "makecode_rx 20 7"
+    assert protocol.decode(raw).group == 20

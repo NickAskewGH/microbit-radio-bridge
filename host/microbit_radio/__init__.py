@@ -1,5 +1,5 @@
-"""Host-side tools for the microbit-radio-bridge."""
+"""Host-side tools for the multi-protocol radio bridge."""
 
-from .protocol import MakeCodePacket, PacketDecodeError, decode_packet
+from .protocols.makecode import MakeCodePacket, MakeCodeProtocol, PacketDecodeError, decode_packet
 
-__all__ = ["MakeCodePacket", "PacketDecodeError", "decode_packet"]
+__all__ = ["MakeCodePacket", "MakeCodeProtocol", "PacketDecodeError", "decode_packet"]

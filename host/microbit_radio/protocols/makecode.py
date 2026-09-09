@@ -89,6 +89,34 @@ def decode_packet(raw: bytes, *, expected_group: int | None = None) -> MakeCodeP
     raise PacketDecodeError(f"unsupported MakeCode packet type: {packet_type}")
 
 
+def encode_value(
+    name: str,
+    value: int,
+    *,
+    timestamp_ms: int,
+    payload_group: int = 0,
+    serial: int = 0,
+) -> bytes:
+    """Encode one MakeCode ``radio.sendValue`` payload."""
+    encoded_name = name.encode("utf-8")
+    if len(encoded_name) > 8:
+        raise ValueError("MakeCode value name exceeds eight bytes")
+    if not -(2**31) <= value < 2**31:
+        raise ValueError("MakeCode value must fit a signed 32-bit integer")
+    if not 0 <= timestamp_ms < 2**32:
+        raise ValueError("timestamp must fit an unsigned 32-bit integer")
+    if not 0 <= payload_group <= 255:
+        raise ValueError("payload group must be between 0 and 255")
+    if not 0 <= serial < 2**32:
+        raise ValueError("serial must fit an unsigned 32-bit integer")
+
+    return (
+        bytes((DAL_HEADER_VERSION, payload_group, DAL_PROTOCOL_RADIO, PACKET_TYPE_VALUE))
+        + struct.pack("<IIiB", timestamp_ms, serial, value, len(encoded_name))
+        + encoded_name
+    )
+
+
 @dataclass(frozen=True)
 class MakeCodeProtocol:
     min_payload_bytes: ClassVar[int] = 12

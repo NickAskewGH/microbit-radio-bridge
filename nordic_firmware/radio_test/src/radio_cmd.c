@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/init.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 #if !defined(CONFIG_SOC_SERIES_NRF54H)
 #include <hal/nrf_power.h>
@@ -964,6 +965,51 @@ static int cmd_makecode_rx(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_makecode_tx(const struct shell *shell, size_t argc, char **argv)
+{
+	uint8_t payload[32];
+	uint32_t group;
+	uint32_t channel;
+	size_t hex_length;
+	size_t payload_length;
+	int err;
+
+	if (argc != 4) {
+		shell_error(shell, "Usage: makecode_tx <group 0-255> <band 0-100> <payload_hex>");
+		return -EINVAL;
+	}
+
+	group = strtoul(argv[1], NULL, 10);
+	channel = strtoul(argv[2], NULL, 10);
+	hex_length = strlen(argv[3]);
+	if (group > 255 || channel > 100 || hex_length == 0 || hex_length > sizeof(payload) * 2 ||
+	    (hex_length % 2) != 0) {
+		shell_error(shell, "Invalid MakeCode group, band, or payload");
+		return -EINVAL;
+	}
+
+	payload_length = hex2bin(argv[3], hex_length, payload, sizeof(payload));
+	if (payload_length * 2 != hex_length) {
+		shell_error(shell, "Payload must contain only hexadecimal bytes");
+		return -EINVAL;
+	}
+
+	if (test_in_progress) {
+		radio_test_cancel(test_config.type);
+		test_in_progress = false;
+	}
+
+	err = radio_makecode_send(group, channel, payload, payload_length);
+	if (err) {
+		shell_error(shell, "MakeCode TX failed: %d", err);
+		return err;
+	}
+
+	shell_print(shell, "MakeCode TX sent: group %u, band %u, bytes %u",
+		    group, channel, payload_length);
+	return 0;
+}
+
 #if defined(RADIO_TXPOWER_TXPOWER_Pos10dBm)
 static void cmd_pos10dbm(const struct shell *shell, size_t argc, char **argv)
 {
@@ -1795,6 +1841,9 @@ SHELL_CMD_REGISTER(print_rx, NULL, "Print RX payload", cmd_print_payload);
 SHELL_CMD_REGISTER(makecode_rx, NULL,
 		   "Stream MakeCode packets: makecode_rx <group> [band]",
 		   cmd_makecode_rx);
+SHELL_CMD_REGISTER(makecode_tx, NULL,
+		   "Send one MakeCode packet: makecode_tx <group> <band> <payload_hex>",
+		   cmd_makecode_tx);
 #if defined(TOGGLE_DCDC_HELP)
 SHELL_CMD_REGISTER(toggle_dcdc_state, NULL, TOGGLE_DCDC_HELP, cmd_toggle_dc);
 #endif

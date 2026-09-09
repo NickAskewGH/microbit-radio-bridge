@@ -316,6 +316,20 @@ void radio_rx_stats_get(struct radio_rx_stats *rx_stats);
 void radio_makecode_group_set(uint8_t group);
 
 /**
+ * @brief Transmit one MakeCode payload and disable the radio afterward.
+ *
+ * @param[in] group   MakeCode radio group (0-255).
+ * @param[in] channel Frequency offset from 2400 MHz.
+ * @param[in] payload MakeCode payload without the radio length byte.
+ * @param[in] length  Payload length (1-32 bytes).
+ *
+ * @retval 0 If the packet was transmitted.
+ * @retval -EINVAL If the payload is empty or too large.
+ */
+int radio_makecode_send(uint8_t group, uint8_t channel,
+			const uint8_t *payload, size_t length);
+
+/**
  * @brief Function for toggling the DC/DC converter state.
  *
  * @param[in] dcdc_state  DC/DC converter state.

@@ -2,6 +2,10 @@
 
 Status: capture and protocol identification required.
 
+Implementation is tracked by the receive-only learning milestone in
+[`docs/milestone-polar-mouse-learning.md`](../../docs/milestone-polar-mouse-learning.md),
+which is intentionally scheduled after the mini-car MakeCode sender.
+
 The two incoming large vehicles use the same remote family and will share this
 protocol workspace. Before implementing an adapter or transmitter, capture and
 verify:

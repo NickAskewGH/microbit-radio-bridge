@@ -12,7 +12,15 @@ The first milestone is deliberately receive-only: sniff packets from the existin
 - Polar Mouse Droid (MSE-6) protocol: workspace created; capture required.
 - JSON-lines serial protocol and CLI: implemented.
 - nRF52840 proprietary-radio receive firmware: MakeCode RX is implemented and hardware tested on the Makerdiary-compatible dongle.
-- Transmit support: intentionally out of scope for this first milestone.
+- MakeCode one-shot transmit firmware and local Flask control API: implemented;
+	vehicle-side validation remains.
+
+Planned sequence:
+
+1. Implement and safely validate the mini-car MakeCode sender.
+2. Implement the receive-only Polar Mouse learning milestone in
+	[`docs/milestone-polar-mouse-learning.md`](docs/milestone-polar-mouse-learning.md).
+3. Design Polar Mouse decoding and transmission only from verified captures.
 
 ## Quick start
 
@@ -41,6 +49,15 @@ The CLI emits one JSON object per line, for example:
 {"group":20,"name":"x","value":-712,"timestamp_ms":1234,"serial":0}
 ```
 
+After flashing firmware with MakeCode TX support, start the localhost control API:
+
+```shell
+just serve /dev/ttyACM0 20
+```
+
+See [`docs/hardware.md`](docs/hardware.md) for locally timed `x/y/t` directives
+and the required raised-wheel test procedure.
+
 ## Repository layout
 
 ```text
@@ -55,7 +72,10 @@ docs/              architecture and hardware workflows
 
 ## Safety and scope
 
-This project only observes radio traffic. It does not change the car firmware, send control packets, or provide a motor-control failsafe yet. Do not connect an unvalidated transmitter to a powered vehicle until the later transmit milestone has been tested safely.
+Transmission is limited to explicitly supported protocol profiles. The MakeCode
+The vehicle enforces each directive's duration locally and stops when it expires.
+Test with driven wheels raised and a physical power cutoff before operating a
+vehicle on the ground.
 
 ## References
 

@@ -1,7 +1,13 @@
 """Radio protocol adapters."""
 
 from .base import DecodedPacket, ProtocolDecodeError, RadioProtocol
-from .makecode import MakeCodePacket, MakeCodeProtocol, PacketDecodeError, decode_packet
+from .makecode import (
+    MakeCodePacket,
+    MakeCodeProtocol,
+    PacketDecodeError,
+    decode_packet,
+    encode_value,
+)
 
 __all__ = [
     "DecodedPacket",
@@ -11,4 +17,5 @@ __all__ = [
     "ProtocolDecodeError",
     "RadioProtocol",
     "decode_packet",
+    "encode_value",
 ]

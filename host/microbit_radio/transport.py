@@ -35,6 +35,15 @@ class SerialShellTransport:
         self.port.write(f"{command}\n".encode("ascii"))
         self.port.flush()
 
+    def wait_for_text(self, expected: str, *, max_lines: int = 20) -> None:
+        for _ in range(max_lines):
+            line = self.port.readline()
+            if not line:
+                break
+            if expected in line.decode("ascii", errors="ignore"):
+                return
+        raise TimeoutError(f"firmware did not acknowledge: {expected}")
+
     def records(self, *, min_bytes: int, max_bytes: int) -> Iterator[bytes]:
         while True:
             line = self.port.readline()

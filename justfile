@@ -29,3 +29,7 @@ check: format-check lint test
 # Decode packets from the dongle's serial stream.
 sniff port group="20" baud="115200" frequency="7":
     uv run --extra serial radio-bridge sniff --port "{{port}}" --baud "{{baud}}" --group "{{group}}" --frequency "{{frequency}}"
+
+# Serve the local mini-car control API.
+serve port group="20" baud="115200" frequency="7":
+    uv run --extra api radio-bridge serve --port "{{port}}" --baud "{{baud}}" --group "{{group}}" --frequency "{{frequency}}"

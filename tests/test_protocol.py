@@ -1,5 +1,5 @@
 from microbit_radio.protocol import PacketDecodeError, decode_packet
-from microbit_radio.protocols.makecode import MakeCodeProtocol
+from microbit_radio.protocols.makecode import MakeCodeProtocol, encode_value
 from pathlib import Path
 
 
@@ -77,3 +77,9 @@ def test_makecode_adapter_owns_setup_and_group_normalization() -> None:
 
     assert protocol.receiver_command == "makecode_rx 20 7"
     assert protocol.decode(raw).group == 20
+
+
+def test_encodes_observed_send_value_payload() -> None:
+    raw = encode_value("x", -712, timestamp_ms=1234, payload_group=20)
+
+    assert raw == bytes.fromhex((FIXTURES / "send-value-x-group20.hex").read_text())

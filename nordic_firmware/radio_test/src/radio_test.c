@@ -111,6 +111,7 @@ DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, address_end_gpios)
 
 #define MAKECODE_BASE_ADDRESS 0x75626974
 #define MAKECODE_MAX_PACKET_SIZE 32
+#define MAKECODE_ON_AIR_LENGTH 35
 #define MAKECODE_CRC_INIT 0xFFFF
 #define MAKECODE_CRC_POLYNOMIAL 0x11021
 #define MAKECODE_DATAWHITEIV 0x18
@@ -1405,6 +1406,43 @@ void radio_rx_stats_get(struct radio_rx_stats *rx_stats)
 void radio_makecode_group_set(uint8_t group)
 {
 	makecode_group = group;
+}
+
+int radio_makecode_send(uint8_t group, uint8_t channel,
+			const uint8_t *payload, size_t length)
+{
+	if (length == 0 || length > MAKECODE_MAX_PACKET_SIZE) {
+		return -EINVAL;
+	}
+
+	radio_disable();
+	makecode_group = group;
+	tx_packet[0] = MAKECODE_ON_AIR_LENGTH;
+	memset(&tx_packet[1], 0, MAKECODE_MAX_PACKET_SIZE);
+	memcpy(&tx_packet[1], payload, length);
+	nrf_radio_packetptr_set(NRF_RADIO, tx_packet);
+
+	radio_mode_set(NRF_RADIO, NRF_RADIO_MODE_NRF_1MBIT);
+	radio_power_set(NRF_RADIO_MODE_NRF_1MBIT, channel, 0);
+	radio_channel_set(NRF_RADIO_MODE_NRF_1MBIT, channel);
+	radio_config(NRF_RADIO_MODE_NRF_1MBIT, TRANSMIT_PATTERN_MAKECODE);
+	nrf_radio_event_clear(NRF_RADIO, RADIO_TEST_EVENT_END);
+	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_DISABLED);
+	nrf_radio_shorts_enable(NRF_RADIO, NRF_RADIO_SHORT_READY_START_MASK |
+				NRF_RADIO_SHORT_END_DISABLE_MASK);
+
+	radio_start(NRF_RADIO_TASK_TXEN, false);
+	while (!nrf_radio_event_check(NRF_RADIO, RADIO_TEST_EVENT_END)) {
+		/* Wait for the packet to finish. */
+	}
+	while (!nrf_radio_event_check(NRF_RADIO, NRF_RADIO_EVENT_DISABLED)) {
+		/* Wait for the END_DISABLE shortcut. */
+	}
+
+	nrf_radio_event_clear(NRF_RADIO, RADIO_TEST_EVENT_END);
+	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_DISABLED);
+	nrf_radio_shorts_set(NRF_RADIO, 0);
+	return 0;
 }
 
 #if NRF_POWER_HAS_DCDCEN_VDDH || NRF_POWER_HAS_DCDCEN
